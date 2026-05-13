@@ -6,18 +6,20 @@ export default defineConfig({
   build: {
     outDir: 'dist/main',
     emptyOutDir: true,
-    lib: {
-      entry: path.resolve(__dirname, 'src/main/index.ts'),
-      formats: ['cjs'],
-      fileName: () => 'index.js',
-    },
     rollupOptions: {
       external: [
         'electron',
         ...builtinModules,
         ...builtinModules.map(m => `node:${m}`),
-        'better-sqlite3',
       ],
+      input: {
+        index: path.resolve(__dirname, 'src/main/index.ts'),
+        preload: path.resolve(__dirname, 'src/main/preload.ts'),
+      },
+      output: {
+        entryFileNames: '[name].cjs',
+        format: 'cjs',
+      },
     },
     minify: false,
     sourcemap: true,
