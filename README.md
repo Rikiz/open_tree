@@ -138,20 +138,7 @@ npm --version    # Should be >= 9.0
 git --version    # Should be >= 2.30
 ```
 
-### Step 2: Install Build Tools (Windows only)
-
-Windows requires native build tools for some dependencies:
-
-```powershell
-# Option A: Install Visual Studio Build Tools
-# Download from https://visualstudio.microsoft.com/visual-cpp-build-tools/
-# During installation, select "Desktop development with C++"
-
-# Option B: Using npm (simpler)
-npm install --global windows-build-tools
-```
-
-### Step 3: Clone & Install
+### Step 2: Clone & Install
 
 ```powershell
 git clone https://github.com/Rikiz/open_tree.git
@@ -161,7 +148,7 @@ npm install
 
 > **Note**: If `npm install` fails with native module errors, run as Administrator.
 
-### Step 4: Build & Run
+### Step 3: Build & Run
 
 #### Development mode
 
@@ -180,7 +167,7 @@ The installer will be created in `release/`:
 - `SourceTree Clone Setup-*.exe` — NSIS installer
 - `SourceTree Clone-*-portable.exe` — Portable version
 
-### Step 5: Install from EXE
+### Step 4: Install from EXE
 
 1. Run `SourceTree Clone Setup-*.exe`
 2. Choose installation directory
