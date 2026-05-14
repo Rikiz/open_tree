@@ -1,6 +1,5 @@
-import { useState } from 'react'
 import { useRepoStore } from '@renderer/store/repoStore'
-import { CommitGraphCanvas } from './CommitGraph'
+import { CommitGraphCanvas, useGraphLayout } from './CommitGraph'
 import { git } from '@renderer/ipc'
 
 export function HistoryView() {
@@ -21,6 +20,8 @@ export function HistoryView() {
     isMerge: c.parents.length > 1,
   }))
 
+  const graphWidth = Math.max(200, useGraphLayout(graphNodes).width)
+
   function handleCommitClick(hash: string) {
     // Will navigate to commit detail
   }
@@ -34,17 +35,17 @@ export function HistoryView() {
       <div className="flex-1 overflow-auto">
         <div className="relative" style={{ minHeight: commits.length * 32 }}>
           {/* Graph layer */}
-          <div className="absolute left-0 top-0 bottom-0" style={{ width: 200 }}>
+          <div className="absolute left-0 top-0 bottom-0" style={{ width: graphWidth }}>
             <CommitGraphCanvas
               commits={graphNodes}
-              width={200}
+              width={graphWidth}
               rowHeight={32}
               onCommitClick={handleCommitClick}
             />
           </div>
 
           {/* Text layer */}
-          <div className="ml-[200px]">
+          <div style={{ marginLeft: graphWidth }}>
             {commits.map((c, i) => (
               <div
                 key={c.hash}
