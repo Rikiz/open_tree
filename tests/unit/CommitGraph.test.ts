@@ -56,11 +56,21 @@ function computeGraphLayout(commits: { hash: string; parents: string[] }[]) {
 
     nodes.push({ hash: commit.hash, x: nodeX, y: nodeY, color: BRANCH_COLORS[laneColors[lane] % BRANCH_COLORS.length], lane })
 
-    for (const parent of commit.parents) {
-      const parentLane = assignLane(parent)
-      if (parentLane >= laneColors.length) {
-        for (let c = laneColors.length; c <= parentLane; c++) {
-          laneColors.push(nextColor++ % BRANCH_COLORS.length)
+    for (let p = 0; p < commit.parents.length; p++) {
+      const parent = commit.parents[p]
+      let parentLane: number
+      if (p === 0) {
+        hashToLane.set(parent, lane)
+        parentLane = lane
+        if (laneColors[lane] === undefined) {
+          laneColors[lane] = nextColor++ % BRANCH_COLORS.length
+        }
+      } else {
+        parentLane = assignLane(parent)
+        if (parentLane >= laneColors.length) {
+          for (let c = laneColors.length; c <= parentLane; c++) {
+            laneColors.push(nextColor++ % BRANCH_COLORS.length)
+          }
         }
       }
       maxLanes = Math.max(maxLanes, parentLane + 1)

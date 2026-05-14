@@ -473,7 +473,7 @@ export class GitService {
   }
 
   async log(repoPath: string, options: LogOptions = {}): Promise<Commit[]> {
-    const args = ['log', '--pretty=format:%H%x00%h%x00%an%x00%ae%x00%at%x00%s%x00%b%x00%D']
+    const args = ['log', '--pretty=format:%H%x00%h%x00%an%x00%ae%x00%at%x00%s%x00%b%x00%D%x00%P']
     if (options.maxCount) args.push(`-${options.maxCount}`)
     if (options.skip) args.push(`--skip=${options.skip}`)
     if (options.since) args.push(`--since=${options.since}`)
@@ -492,7 +492,7 @@ export class GitService {
 
     for (const entry of entries) {
       const parts = entry.split('\0')
-      if (parts.length >= 7) {
+      if (parts.length >= 8) {
         commits.push({
           hash: parts[0],
           shortHash: parts[1],
@@ -501,7 +501,7 @@ export class GitService {
           body: parts[6] || '',
           author: { name: parts[2], email: parts[3] },
           date: new Date(parseInt(parts[4]) * 1000),
-          parents: [],
+          parents: parts[8] ? parts[8].split(' ') : [],
           refs: parts[7] ? parts[7].split(', ').filter(Boolean) : [],
         })
       }
