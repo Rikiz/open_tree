@@ -41,6 +41,8 @@ export const git = {
     api.invoke(IPC.GIT_DIFF, { path, options }),
   log: (path: string, options?: Record<string, unknown>) =>
     api.invoke(IPC.GIT_LOG, { path, options }),
+  commitDetail: (path: string, hash: string) =>
+    api.invoke(IPC.GIT_COMMIT_DETAIL, { path, hash }),
   listBranches: (path: string) => api.invoke(IPC.GIT_LIST_BRANCHES, { path }),
   createBranch: (path: string, name: string, options?: Record<string, unknown>) =>
     api.invoke(IPC.GIT_CREATE_BRANCH, { path, name, options }),

@@ -1,11 +1,18 @@
+import { useState } from 'react'
 import { useRepoStore } from '@renderer/store/repoStore'
 import { CommitGraphCanvas, useGraphLayout } from './CommitGraph'
+import { CommitDetail } from './CommitDetail'
 import { git } from '@renderer/ipc'
 
 export function HistoryView() {
   const commits = useRepoStore(s => s.commits)
   const repoPath = useRepoStore(s => s.repoPath)
+  const hasMoreCommits = useRepoStore(s => s.hasMoreCommits)
   const fetchCommits = useRepoStore(s => s.fetchCommits)
+  const selectCommit = useRepoStore(s => s.selectCommit)
+  const selectedCommit = useRepoStore(s => s.selectedCommit)
+
+  const [detailHash, setDetailHash] = useState<string | null>(null)
 
   const graphNodes = commits.map(c => ({
     hash: c.hash,
@@ -23,7 +30,13 @@ export function HistoryView() {
   const graphWidth = Math.max(200, useGraphLayout(graphNodes).width)
 
   function handleCommitClick(hash: string) {
-    // Will navigate to commit detail
+    setDetailHash(hash)
+    selectCommit(hash)
+  }
+
+  function handleCloseDetail() {
+    setDetailHash(null)
+    selectCommit(null)
   }
 
   function handleLoadMore() {
@@ -32,6 +45,12 @@ export function HistoryView() {
 
   return (
     <div className="h-full flex flex-col">
+      {detailHash && selectedCommit && (
+        <CommitDetail
+          detail={selectedCommit}
+          onClose={handleCloseDetail}
+        />
+      )}
       <div className="flex-1 overflow-auto">
         <div className="relative" style={{ minHeight: commits.length * 32 }}>
           {/* Graph layer */}
@@ -49,7 +68,7 @@ export function HistoryView() {
             {commits.map((c, i) => (
               <div
                 key={c.hash}
-                className="flex items-center border-b h-8 px-2 hover:bg-accent cursor-pointer"
+                className={'flex items-center border-b h-8 px-2 hover:bg-accent cursor-pointer' + (detailHash === c.hash ? ' bg-accent' : '')}
                 onClick={() => handleCommitClick(c.hash)}
               >
                 <div className="flex-1 min-w-0">
@@ -71,7 +90,7 @@ export function HistoryView() {
             ))}
 
             {/* Load more */}
-            {commits.length >= 50 && (
+            {hasMoreCommits && (
               <button
                 onClick={handleLoadMore}
                 className="w-full py-2 text-xs text-muted-foreground hover:bg-accent"

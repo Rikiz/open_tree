@@ -37,6 +37,7 @@ export const IPC = {
   GIT_CONFIG: 'git:config',
   GIT_SET_CONFIG: 'git:setConfig',
   GIT_PROGRESS: 'git:progress',
+  GIT_COMMIT_DETAIL: 'git:commitDetail',
 
   // Settings
   SETTINGS_GET: 'settings:get',

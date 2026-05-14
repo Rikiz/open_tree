@@ -101,6 +101,10 @@ export function registerIpcHandlers(wm: WindowManager): void {
     return git.log(path, options ?? {})
   })
 
+  ipcMain.handle('git:commitDetail', async (_, { path, hash }: { path: string; hash: string }) => {
+    return git.commitDetail(path, hash)
+  })
+
   ipcMain.handle('git:listBranches', async (_, { path }: { path: string }) => {
     return git.listBranches(path)
   })

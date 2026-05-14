@@ -312,6 +312,21 @@ export class GitService {
     }
   }
 
+  async commitDetail(repoPath: string, hash: string): Promise<{ commit: Commit; diff: string }> {
+    const logArgs = ['log', '-1', `--pretty=format:%H%x00%h%x00%an%x00%ae%x00%at%x00%s%x00%b%x00%D%x00%P`, hash]
+    const { stdout } = await this.exec(repoPath, logArgs)
+    const commits = this.parseLog(stdout)
+    if (commits.length === 0) throw new Error(`Commit ${hash} not found`)
+
+    const isMerge = commits[0].parents.length > 1
+    const diffArgs = ['diff-tree', '-r', '-p', '--no-commit-id']
+    if (isMerge) diffArgs.push('-c')
+    diffArgs.push(hash)
+    const { stdout: diffStdout } = await this.exec(repoPath, diffArgs)
+
+    return { commit: commits[0], diff: diffStdout }
+  }
+
   async status(repoPath: string): Promise<StatusResult> {
     const { stdout } = await this.exec(repoPath, ['status', '--porcelain=v2', '--branch', '--renames'])
     return this.parseStatus(stdout)
@@ -358,14 +373,33 @@ export class GitService {
     if (line[0] === '?') {
       return { path: line.slice(2), status: '?', staged: false, additions: 0, deletions: 0, binary: false }
     }
+
+    const type = line[0]
     const parts = line.split(/[\s]+/)
     const xy = parts[1] || '  '
     const staged = xy[0] !== '.' && xy[0] !== ' '
-    const status = xy.replace(/\./g, ' ') || (line[0] === 'u' ? 'U' : 'M')
-    const subCode = parts.length > 2 ? parts[2] : ''
-    const hasRename = subCode.startsWith('R')
-    const filePath = hasRename ? parts[parts.length - 1] : parts.slice(2).join(' ')
-    const oldPath = hasRename ? parts[parts.length - 2] : undefined
+    const status = xy.replace(/\./g, ' ') || (type === 'u' ? 'U' : 'M')
+
+    let filePath: string
+    let oldPath: string | undefined
+
+    if (type === '2') {
+      // Rename: format = 2 <XY> <sub> <mH> <mI> <mW> <hH> <hI> <X><scpre><X><score><origPath>\0<newPath>
+      const nulIdx = line.indexOf('\0')
+      if (nulIdx >= 0) {
+        oldPath = line.substring(0, nulIdx).split(/[\s]+/).pop()
+        filePath = line.substring(nulIdx + 1)
+      } else {
+        filePath = parts[parts.length - 1]
+        oldPath = parts[parts.length - 2]
+      }
+    } else if (type === 'u') {
+      // Conflict: u <XY> <sub> <m1> <m2> <m3> <mW> <h1> <h2> <h3> <path>
+      filePath = parts.slice(10).join(' ')
+    } else {
+      // Type 1 (regular): 1 <XY> <sub> <mH> <mI> <mW> <hH> <hI> <path>
+      filePath = parts.slice(8).join(' ')
+    }
 
     return {
       path: filePath.replace(/"/g, ''),

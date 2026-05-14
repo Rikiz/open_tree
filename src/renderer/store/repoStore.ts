@@ -74,12 +74,19 @@ interface DiffLine {
   newLineNumber?: number
 }
 
+interface CommitDetailResult {
+  commit: Commit
+  diff: string
+}
+
 interface RepoState {
   repoPath: string | null
   status: StatusResult | null
   branches: Branch[]
   currentBranch: string | null
   commits: Commit[]
+  hasMoreCommits: boolean
+  selectedCommit: CommitDetailResult | null
   selectedFile: string | null
   selectedFileDiff: DiffResult | null
   isLoading: boolean
@@ -95,6 +102,7 @@ interface RepoState {
   stageFiles: (files: string[]) => Promise<void>
   unstageFiles: (files: string[]) => Promise<void>
   selectFile: (file: string | null) => Promise<void>
+  selectCommit: (hash: string | null) => Promise<void>
   checkout: (branch: string) => Promise<void>
   push: () => Promise<void>
   pull: () => Promise<void>
@@ -107,6 +115,8 @@ export const useRepoStore = create<RepoState>((set, get) => ({
   branches: [],
   currentBranch: null,
   commits: [],
+  hasMoreCommits: true,
+  selectedCommit: null,
   selectedFile: null,
   selectedFileDiff: null,
   isLoading: false,
@@ -156,7 +166,21 @@ export const useRepoStore = create<RepoState>((set, get) => ({
     if (!repoPath) return
     try {
       const newCommits = await git.log(repoPath, { maxCount: limit, skip: commits.length }) as Commit[]
-      set({ commits: [...commits, ...newCommits] })
+      set({ commits: [...commits, ...newCommits], hasMoreCommits: newCommits.length === limit })
+    } catch (err: any) {
+      set({ error: err.message })
+    }
+  },
+
+  selectCommit: async (hash) => {
+    const { repoPath } = get()
+    if (!repoPath || !hash) {
+      set({ selectedCommit: null })
+      return
+    }
+    try {
+      const detail = await git.commitDetail(repoPath, hash) as CommitDetailResult
+      set({ selectedCommit: detail })
     } catch (err: any) {
       set({ error: err.message })
     }
@@ -169,7 +193,7 @@ export const useRepoStore = create<RepoState>((set, get) => ({
       await git.commit(repoPath, message)
       set({ commitMessage: '' })
       await refreshStatus()
-      set({ commits: [], selectedFile: null, selectedFileDiff: null })
+      set({ commits: [], selectedFile: null, selectedFileDiff: null, selectedCommit: null })
       await get().fetchCommits(50)
     } catch (err: any) {
       set({ error: err.message })
@@ -221,7 +245,7 @@ export const useRepoStore = create<RepoState>((set, get) => ({
     if (!repoPath) return
     try {
       await git.checkout(repoPath, branch)
-      set({ currentBranch: branch, commits: [], selectedFile: null, selectedFileDiff: null })
+      set({ currentBranch: branch, commits: [], selectedFile: null, selectedFileDiff: null, selectedCommit: null })
       await Promise.all([refreshStatus(), fetchBranches()])
       await get().fetchCommits(50)
     } catch (err: any) {
@@ -247,7 +271,7 @@ export const useRepoStore = create<RepoState>((set, get) => ({
     try {
       await git.pull(repoPath)
       await Promise.all([refreshStatus(), fetchBranches()])
-      set({ commits: [], selectedFile: null, selectedFileDiff: null })
+      set({ commits: [], selectedFile: null, selectedFileDiff: null, selectedCommit: null })
       await fetchCommits(50)
     } catch (err: any) {
       set({ error: err.message })
