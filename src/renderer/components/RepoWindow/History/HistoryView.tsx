@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useRepoStore } from '@renderer/store/repoStore'
 import { CommitGraphCanvas, useGraphLayout } from './CommitGraph'
 import { CommitDetail } from './CommitDetail'
@@ -11,8 +10,6 @@ export function HistoryView() {
   const fetchCommits = useRepoStore(s => s.fetchCommits)
   const selectCommit = useRepoStore(s => s.selectCommit)
   const selectedCommit = useRepoStore(s => s.selectedCommit)
-
-  const [detailHash, setDetailHash] = useState<string | null>(null)
 
   const graphNodes = commits.map(c => ({
     hash: c.hash,
@@ -30,12 +27,10 @@ export function HistoryView() {
   const graphWidth = Math.max(200, useGraphLayout(graphNodes).width)
 
   function handleCommitClick(hash: string) {
-    setDetailHash(hash)
     selectCommit(hash)
   }
 
   function handleCloseDetail() {
-    setDetailHash(null)
     selectCommit(null)
   }
 
@@ -43,9 +38,11 @@ export function HistoryView() {
     fetchCommits(50)
   }
 
+  const selectedHash = selectedCommit?.commit?.hash ?? null
+
   return (
     <div className="h-full flex flex-col">
-      {detailHash && selectedCommit && (
+      {selectedCommit && (
         <CommitDetail
           detail={selectedCommit}
           onClose={handleCloseDetail}
@@ -68,7 +65,7 @@ export function HistoryView() {
             {commits.map((c, i) => (
               <div
                 key={c.hash}
-                className={'flex items-center border-b h-8 px-2 hover:bg-accent cursor-pointer' + (detailHash === c.hash ? ' bg-accent' : '')}
+                className={'flex items-center border-b h-8 px-2 hover:bg-accent cursor-pointer' + (selectedHash === c.hash ? ' bg-accent' : '')}
                 onClick={() => handleCommitClick(c.hash)}
               >
                 <div className="flex-1 min-w-0">

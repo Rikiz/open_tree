@@ -162,13 +162,14 @@ export const useRepoStore = create<RepoState>((set, get) => ({
   },
 
   fetchCommits: async (limit = 50) => {
-    const { repoPath, commits } = get()
-    if (!repoPath) return
+    const { repoPath, commits, isLoading } = get()
+    if (!repoPath || isLoading) return
+    set({ isLoading: true })
     try {
       const newCommits = await git.log(repoPath, { maxCount: limit, skip: commits.length }) as Commit[]
-      set({ commits: [...commits, ...newCommits], hasMoreCommits: newCommits.length === limit })
+      set({ commits: [...commits, ...newCommits], hasMoreCommits: newCommits.length === limit, isLoading: false })
     } catch (err: any) {
-      set({ error: err.message })
+      set({ error: err.message, isLoading: false })
     }
   },
 
@@ -178,6 +179,7 @@ export const useRepoStore = create<RepoState>((set, get) => ({
       set({ selectedCommit: null })
       return
     }
+    set({ selectedCommit: null })
     try {
       const detail = await git.commitDetail(repoPath, hash) as CommitDetailResult
       set({ selectedCommit: detail })

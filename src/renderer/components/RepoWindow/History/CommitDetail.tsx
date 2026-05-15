@@ -19,18 +19,16 @@ interface CommitDetailProps {
 
 export function CommitDetail({ detail, onClose }: CommitDetailProps) {
   const { commit, diff } = detail
-  const files = diff
-    .split(/^diff --git /m)
-    .filter(Boolean)
-    .slice(1)
-    .map(s => {
-      const header = s.split('\n')[0]
-      const path = header.replace(/^a\//, '').replace(/ b\/.*/, '').trim()
-      const additions = (s.match(/^\+/gm) || []).length
-      const deletions = (s.match(/^-/gm) || []).length
-      const binary = s.includes('Binary files')
-      return { path, additions, deletions, binary }
-    })
+  const sections = diff.split(/^diff --git /m).filter(Boolean)
+  const files = sections.map(s => {
+    const header = s.split('\n')[0]
+    const path = header.replace(/.* b\//, '').trim()
+    const lines = s.split('\n')
+    const additions = lines.filter(l => l.startsWith('+') && !l.startsWith('+++')).length
+    const deletions = lines.filter(l => l.startsWith('-') && !l.startsWith('---')).length
+    const binary = s.includes('Binary files')
+    return { path, additions, deletions, binary }
+  })
 
   const totalAdd = files.reduce((sum, f) => sum + f.additions, 0)
   const totalDel = files.reduce((sum, f) => sum + f.deletions, 0)
@@ -54,13 +52,13 @@ export function CommitDetail({ detail, onClose }: CommitDetailProps) {
           <h3 className="text-sm font-medium mb-1">{commit.subject}</h3>
           {bodyLines.length > 0 && (
             <pre className="text-xs text-muted-foreground whitespace-pre-wrap mb-2 font-sans">
-              {bodyLines.slice(1).join('\n')}
+              {bodyLines.join('\n')}
             </pre>
           )}
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <User className="w-3 h-3" />
-              {commit.author.name} &lt;{commit.author.email}&gt;
+              {commit.author.name} {'<'}{commit.author.email}{'>'}
             </span>
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
