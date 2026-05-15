@@ -30,7 +30,7 @@ export function RepoWindow({ onBack }: Props) {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      <header className="h-10 border-b flex items-center px-2 gap-1 shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
+      <header className="h-10 border-b flex items-center px-2 gap-1 shrink-0" style={{ WebkitAppRegion: 'drag', paddingLeft: '76px' } as React.CSSProperties}>
         <button onClick={onBack} className="p-1.5 rounded hover:bg-accent" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
           <ArrowLeft className="w-4 h-4" />
         </button>
