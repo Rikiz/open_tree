@@ -59,7 +59,7 @@ Test Files  7 passed (7)
 
 | File | Tests | Verifies |
 |------|-------|----------|
-| `tests/unit/GitService.test.ts` | 13 | Status/log/diff parsers, GitError |
+| `tests/unit/GitService.test.ts` | 15 | Status/log/diff parsers, GitError |
 | `tests/unit/CommitGraph.test.ts` | 7 | Graph layout algorithm correctness |
 | `tests/unit/Stores.test.ts` | 5 | Theme toggle + persistence |
 | `tests/unit/components/BookmarkWindow.test.tsx` | 5 | Empty state, list render, click handlers |
@@ -87,7 +87,7 @@ npm run dev
 **Expected behavior**:
 1. Terminal shows `VITE v6.x.x  ready in XXX ms`
 2. Terminal shows Vite local URL `http://localhost:5173/`
-3. An Electron window appears titled "SourceTree Clone"
+3. An Electron window appears titled "OpenTree"
 4. Window shows the bookmark list (empty initially)
 5. Click "Add" → browse to a Git repo → click "Open" → repo appears in list
 6. Double-click repo → opens repo view showing file status / branch list
@@ -97,7 +97,7 @@ npm run dev
 In the running app, check the DevTools console (Cmd+Opt+I on macOS):
 - No red errors
 - Network tab shows `localhost:5173` connected
-- Application tab → Local Storage shows `sourcetree-theme` key
+- Application tab → Local Storage shows `opentree-theme` key
 
 ### Verify Data Persistence
 
@@ -105,12 +105,12 @@ After closing the app, check the data file exists:
 
 **macOS:**
 ```bash
-cat ~/Library/Application\ Support/sourcetree-clone/sourcetree.json
+cat ~/Library/Application\ Support/sourcetree-clone/opentree.json
 ```
 
 **Windows:**
 ```powershell
-type %APPDATA%/sourcetree-clone/sourcetree.json
+type %APPDATA%/sourcetree-clone/opentree.json
 ```
 
 **Expected**: JSON file with `repositories` array containing added repos.
@@ -125,7 +125,7 @@ type %APPDATA%/sourcetree-clone/sourcetree.json
 npm run package:mac
 ```
 
-**Expected**: `release/SourceTree Clone-*.dmg` is created.
+**Expected**: `release/OpenTree-*.dmg` is created.
 
 1. Open the `.dmg`
 2. Drag app to `/Applications`
@@ -138,7 +138,7 @@ npm run package:mac
 npm run package:win
 ```
 
-**Expected**: `release/SourceTree Clone Setup-*.exe` is created.
+**Expected**: `release/OpenTree Setup-*.exe` is created.
 
 1. Run the installer
 2. Choose install directory

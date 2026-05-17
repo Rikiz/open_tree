@@ -5,7 +5,7 @@ import os from 'os'
 import path from 'path'
 
 describe('Git integration tests', () => {
-  const tmpDir = path.join(os.tmpdir(), `sourcetree-test-${Date.now()}`)
+  const tmpDir = path.join(os.tmpdir(), `opentree-test-${Date.now()}`)
   const repoPath = path.join(tmpDir, 'testrepo')
 
   function git(args: string[]) {

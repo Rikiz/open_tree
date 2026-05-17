@@ -1,6 +1,6 @@
 # OpenTree
 
-A powerful, free Git GUI client — SourceTree clone built with **Electron + React + TypeScript + Tailwind CSS**.
+A powerful, free Git GUI client — **OpenTree** built with **Electron + React + TypeScript + Tailwind CSS**.
 
 <p align="center">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue" alt="Platforms">
@@ -31,12 +31,12 @@ A powerful, free Git GUI client — SourceTree clone built with **Electron + Rea
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  SourceTree Clone                    [☀] [⚙️] [Clone] [Add] │
+│  OpenTree                    [☀] [⚙️] [Clone] [Add] │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  📁 myproject                  /home/repos/myproject    🗑️  │
 │  📁 lib                        /home/repos/lib          🗑️  │
-│  📁 sourcetree-clone           ~/work/sourcetree        🗑️  │
+│  📁 opentree           ~/work/opentree        🗑️  │
 │                                                             │
 │  No repositories yet  →  Clone Repository / Add Existing   │
 │                                                             │
@@ -109,7 +109,7 @@ The `.dmg` file will be created in `release/`.
 
 ### Step 4: Install from DMG
 
-1. Open `release/SourceTree Clone-*.dmg`
+1. Open `release/OpenTree-*.dmg`
 2. Drag the app icon to `/Applications`
 3. Launch from Applications or Spotlight
 
@@ -164,12 +164,12 @@ npm run package:win     # Generate .exe installer (NSIS)
 ```
 
 The installer will be created in `release/`:
-- `SourceTree Clone Setup-*.exe` — NSIS installer
-- `SourceTree Clone-*-portable.exe` — Portable version
+- `OpenTree Setup-*.exe` — NSIS installer
+- `OpenTree-*-portable.exe` — Portable version
 
 ### Step 4: Install from EXE
 
-1. Run `SourceTree Clone Setup-*.exe`
+1. Run `OpenTree Setup-*.exe`
 2. Choose installation directory
 3. Check "Create desktop shortcut"
 4. Click Install
@@ -315,7 +315,7 @@ The application follows Electron's **multi-process model**:
 - **Renderer**: Sandboxed, no Node.js access
 - **Preload**: Exposes typed API via `contextBridge`
 - **Main**: Runs Git operations, manages windows, handles OAuth
-- **Storage**: JSON file at `~/Library/Application Support/sourcetree-clone/sourcetree.json` (macOS) or `%APPDATA%/sourcetree-clone/sourcetree.json` (Windows)
+- **Storage**: JSON file at `~/Library/Application Support/sourcetree-clone/opentree.json` (macOS) or `%APPDATA%/sourcetree-clone/opentree.json` (Windows)
 
 ---
 

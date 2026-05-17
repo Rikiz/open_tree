@@ -1,7 +1,7 @@
 {
   "name": "sourcetree-clone",
   "version": "0.1.0",
-  "description": "A powerful Git GUI client — SourceTree clone built with Electron + React",
+  "description": "A powerful Git GUI client — OpenTree built with Electron + React",
   "main": "dist/main/index.cjs",
   "author": "",
   "license": "MIT",

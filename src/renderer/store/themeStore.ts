@@ -37,6 +37,6 @@ export const useThemeStore = create<ThemeState>()(
         set({ theme: next, resolved: next })
       },
     }),
-    { name: 'sourcetree-theme' }
+    { name: 'opentree-theme' }
   )
 )

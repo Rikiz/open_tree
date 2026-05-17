@@ -25,7 +25,7 @@ export function BookmarkWindow({ bookmarks, onOpenRepo, onAddRepo, onRemoveRepo 
   return (
     <div className="h-screen flex flex-col bg-background">
       <header className="h-12 border-b flex items-center justify-between pl-[76px] pr-4 shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
-        <h1 className="text-sm font-semibold">SourceTree Clone</h1>
+        <h1 className="text-sm font-semibold">OpenTree</h1>
         <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
           <ThemeToggle />
           <button

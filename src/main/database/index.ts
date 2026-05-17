@@ -16,7 +16,7 @@ export class Database {
     if (!fs.existsSync(userDataPath)) {
       fs.mkdirSync(userDataPath, { recursive: true })
     }
-    this.dbPath = path.join(userDataPath, 'sourcetree.json')
+    this.dbPath = path.join(userDataPath, 'opentree.json')
     this.data = {
       repositories: [],
       accounts: [],

@@ -42,7 +42,7 @@ export function GeneralTab() {
 
       <div className="mt-6 p-3 rounded-md bg-accent/50">
         <p className="text-xs text-muted-foreground">
-          SourceTree Clone v0.1.0
+          OpenTree v0.1.0
           <br />
           Electron + React + TypeScript + Tailwind CSS
         </p>

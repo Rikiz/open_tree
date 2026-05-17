@@ -265,7 +265,7 @@ export class AuthService {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'User-Agent': 'sourcetree-clone',
+          'User-Agent': 'opentree',
           'Accept': 'application/json',
         },
       }

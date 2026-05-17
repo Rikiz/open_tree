@@ -1,4 +1,4 @@
-# SourceTree Clone - Product Specification
+# OpenTree - Product Specification
 
 **Document Version**: 1.0  
 **Last Updated**: 2026-05-10  

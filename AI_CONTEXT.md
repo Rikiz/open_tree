@@ -18,7 +18,7 @@ Built with **Electron + React + TypeScript + Tailwind CSS**.
 | Git support | Git only (no Mercurial) |
 | Architecture | Electron multi-process (Main ↔ Preload ↔ Renderer) |
 | State management | Zustand |
-| Storage | JSON file (`sourcetree.json`) |
+| Storage | JSON file (`opentree.json`) |
 | Test framework | Vitest + React Testing Library |
 | Test count | 53 tests, 7 suites, 0 failures |
 
