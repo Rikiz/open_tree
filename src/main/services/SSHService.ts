@@ -5,6 +5,26 @@ import os from 'os'
 import fs from 'fs'
 
 const execFileAsync = promisify(execFile)
+const isWindows = process.platform === 'win32'
+
+function tryExec(name: string, args: string[], opts?: Record<string, unknown>): ReturnType<typeof execFileAsync> {
+  if (!isWindows) return execFileAsync(name, args, opts)
+
+  const ext = name.endsWith('.exe') ? name : name + '.exe'
+  const searchPaths = [
+    path.join(process.env['ProgramFiles'] || 'C:\\Program Files', 'Git', 'usr', 'bin', ext),
+    path.join(process.env['SystemRoot'] || 'C:\\Windows', 'System32', 'OpenSSH', ext),
+    path.join(os.homedir(), 'scoop', 'apps', 'git', 'current', 'usr', 'bin', ext),
+    ext,
+  ]
+  return execFileAsync(searchPaths[0], args, opts).catch(() =>
+    execFileAsync(searchPaths[1], args, opts).catch(() =>
+      execFileAsync(searchPaths[2], args, opts).catch(() =>
+        execFileAsync(searchPaths[3], args, opts)
+      )
+    )
+  )
+}
 
 export interface SSHKey {
   name: string
@@ -90,13 +110,14 @@ export class SSHService {
     const args = ['-t', type, '-f', keyPath, '-N', passphrase || '', '-q']
     if (comment) args.push('-C', comment)
 
-    await execFileAsync('ssh-keygen', args)
+    await tryExec('ssh-keygen', args)
 
     const publicKey = fs.readFileSync(keyPath + '.pub', 'utf8').trim()
 
-    // Set proper permissions
-    fs.chmodSync(keyPath, 0o600)
-    fs.chmodSync(keyPath + '.pub', 0o644)
+    if (!isWindows) {
+      fs.chmodSync(keyPath, 0o600)
+      fs.chmodSync(keyPath + '.pub', 0o644)
+    }
 
     return {
       name: keyName,
@@ -112,7 +133,7 @@ export class SSHService {
     if (keyPath) args.splice(1, 0, '-i', keyPath)
 
     try {
-      const { stdout, stderr } = await execFileAsync('ssh', args, { timeout: 10000 })
+      const { stdout, stderr } = await tryExec('ssh', args, { timeout: 10000 })
       return { success: true, message: stdout || stderr }
     } catch (err: any) {
       return { success: false, message: err.stderr || err.message }

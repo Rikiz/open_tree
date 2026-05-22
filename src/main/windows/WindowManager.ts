@@ -2,6 +2,7 @@ import { app, BrowserWindow, BrowserWindowConstructorOptions } from 'electron'
 import path from 'path'
 
 const isDev = process.env.NODE_ENV === 'development'
+const isMac = process.platform === 'darwin'
 
 const BASE_WINDOW_OPTIONS: BrowserWindowConstructorOptions = {
   width: 1200,
@@ -9,7 +10,7 @@ const BASE_WINDOW_OPTIONS: BrowserWindowConstructorOptions = {
   minWidth: 900,
   minHeight: 600,
   backgroundColor: '#ffffff',
-  titleBarStyle: 'hiddenInset',
+  ...(isMac ? { titleBarStyle: 'hiddenInset' as const } : {}),
   webPreferences: {
     preload: path.join(__dirname, 'preload.cjs'),
     contextIsolation: true,
