@@ -143,6 +143,9 @@ git --version    # Should be >= 2.30
 ```powershell
 git clone https://github.com/Rikiz/open_tree.git
 cd open_tree
+
+# If GitHub downloads fail (common in China), set mirror first:
+# $env:ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"
 npm install
 ```
 
@@ -159,9 +162,18 @@ npm run dev
 #### Production build
 
 ```powershell
-npm run build           # Compile TypeScript + bundle renderer
-npm run package:win     # Generate .exe installer (NSIS)
+npm run build               # Compile TypeScript + bundle renderer
+
+# If direct GitHub access fails (in China), use the mirror script:
+npm run package:win-mirror   # Use npmmirror.com mirrors for Electron downloads
+
+# Otherwise:
+npm run package:win         # Generate .exe installer (NSIS) — downloads from GitHub
 ```
+
+The `package:win-mirror` command sets these environment variables automatically:
+- `ELECTRON_MIRROR` → npmmirror.com mirror for Electron binary (~100MB)
+- `ELECTRON_BUILDER_BINARIES_MIRROR` → npmmirror.com mirror for NSIS/packaging tools (~30MB)
 
 The installer will be created in `release/`:
 - `OpenTree Setup-*.exe` — NSIS installer
