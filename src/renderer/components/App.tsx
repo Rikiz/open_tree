@@ -10,6 +10,7 @@ export function App() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
   const repoPath = useRepoStore(s => s.repoPath)
   const openRepo = useRepoStore(s => s.openRepo)
+  const closeRepo = useRepoStore(s => s.closeRepo)
 
   useEffect(() => {
     loadBookmarks()
@@ -30,6 +31,7 @@ export function App() {
 
   async function handleOpenRepo(repoPath: string) {
     await openRepo(repoPath)
+    setCurrentView('repo')
   }
 
   async function handleAddRepo(dirPath: string) {
@@ -48,6 +50,7 @@ export function App() {
 
   function handleBackToBookmarks() {
     setCurrentView('bookmarks')
+    closeRepo()
     loadBookmarks()
   }
 

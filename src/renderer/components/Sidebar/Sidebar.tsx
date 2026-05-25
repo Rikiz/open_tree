@@ -35,8 +35,12 @@ export function Sidebar() {
 
   const refreshStashes = useCallback(() => {
     if (!repoPath) return
-    git.listStashes(repoPath).then(s => setStashes(s as StashItem[]))
-    git.listTags(repoPath).then(t => setTags(t as TagItem[]))
+    git.listStashes(repoPath)
+      .then(s => setStashes(s as StashItem[]))
+      .catch((err: any) => console.error('Failed to list stashes:', err.message))
+    git.listTags(repoPath)
+      .then(t => setTags(t as TagItem[]))
+      .catch((err: any) => console.error('Failed to list tags:', err.message))
   }, [repoPath])
 
   useEffect(() => {
@@ -215,6 +219,7 @@ export function Sidebar() {
             {stashes.map((s) => (
               <div
                 key={s.index}
+                onClick={() => setPreviewStash(s)}
                 onDoubleClick={() => handleApply(s, true)}
                 onContextMenu={(e) => handleStashContextMenu(e, s)}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-accent select-none"

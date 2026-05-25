@@ -95,6 +95,7 @@ interface RepoState {
 
   setCommitMessage: (msg: string) => void
   openRepo: (path: string) => Promise<void>
+  closeRepo: () => void
   refreshStatus: () => Promise<void>
   fetchBranches: () => Promise<void>
   fetchCommits: (limit?: number) => Promise<void>
@@ -138,6 +139,20 @@ export const useRepoStore = create<RepoState>((set, get) => ({
       set({ error: err.message, isLoading: false })
     }
   },
+
+  closeRepo: () => set({
+    repoPath: null,
+    status: null,
+    branches: [],
+    currentBranch: null,
+    commits: [],
+    hasMoreCommits: true,
+    selectedCommit: null,
+    selectedFile: null,
+    selectedFileDiff: null,
+    error: null,
+    commitMessage: '',
+  }),
 
   refreshStatus: async () => {
     const { repoPath } = get()
