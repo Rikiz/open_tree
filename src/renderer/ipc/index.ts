@@ -61,6 +61,12 @@ export const git = {
   stash: (path: string, message?: string, options?: Record<string, unknown>) =>
     api.invoke(IPC.GIT_STASH, { path, message, options }),
   listStashes: (path: string) => api.invoke(IPC.GIT_LIST_STASHES, { path }),
+  stashApply: (path: string, index: number, drop?: boolean) =>
+    api.invoke(IPC.GIT_STASH_APPLY, { path, index, drop }),
+  stashDrop: (path: string, index: number) =>
+    api.invoke(IPC.GIT_STASH_DROP, { path, index }),
+  stashShow: (path: string, index: number) =>
+    api.invoke<string>(IPC.GIT_STASH_SHOW, { path, index }),
   listTags: (path: string) => api.invoke(IPC.GIT_LIST_TAGS, { path }),
   createTag: (path: string, name: string, options?: Record<string, unknown>) =>
     api.invoke(IPC.GIT_CREATE_TAG, { path, name, options }),

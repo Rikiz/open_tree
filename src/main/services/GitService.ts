@@ -197,6 +197,7 @@ export interface StashEntry {
   message: string
   branchName: string
   commitHash: string
+  date?: Date
 }
 
 export interface Tag {
@@ -661,16 +662,44 @@ export class GitService {
   }
 
   async listStashes(repoPath: string): Promise<StashEntry[]> {
-    const { stdout } = await this.exec(repoPath, ['stash', 'list', '--format=%gd%x00%gs%x00%h'])
+    const { stdout } = await this.exec(repoPath, ['stash', 'list', '--format=%gd%x00%gs%x00%h%x00%ci'])
     const stashes: StashEntry[] = []
     for (const line of stdout.split('\n').filter(Boolean)) {
-      const [ref, message, hash] = line.split('\0')
+      const [ref, rawMessage, hash, dateStr] = line.split('\0')
       const match = ref.match(/stash@\{(\d+)\}/)
       if (match) {
-        stashes.push({ index: parseInt(match[1]), message, branchName: '', commitHash: hash })
+        let branchName = ''
+        let message = rawMessage
+        const branchMatch = rawMessage.match(/^On (.+?): /)
+        if (branchMatch) {
+          branchName = branchMatch[1].trim()
+          message = rawMessage.slice(branchMatch[0].length).trim()
+        }
+        stashes.push({
+          index: parseInt(match[1]),
+          message,
+          branchName,
+          commitHash: hash,
+          date: dateStr ? new Date(dateStr) : undefined,
+        })
       }
     }
     return stashes
+  }
+
+  async stashApply(repoPath: string, index: number, drop = false): Promise<void> {
+    const ref = `stash@{${index}}`
+    const args = drop ? ['stash', 'pop', ref] : ['stash', 'apply', ref]
+    await this.exec(repoPath, args)
+  }
+
+  async stashDrop(repoPath: string, index: number): Promise<void> {
+    await this.exec(repoPath, ['stash', 'drop', `stash@{${index}}`])
+  }
+
+  async stashShow(repoPath: string, index: number): Promise<string> {
+    const { stdout } = await this.exec(repoPath, ['stash', 'show', '-p', `stash@{${index}}`])
+    return stdout
   }
 
   async listTags(repoPath: string): Promise<Tag[]> {

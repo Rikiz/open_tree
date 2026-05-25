@@ -148,6 +148,18 @@ export function registerIpcHandlers(wm: WindowManager): void {
     return git.listStashes(path)
   })
 
+  ipcMain.handle('git:stashApply', async (_, { path, index, drop }: { path: string; index: number; drop?: boolean }) => {
+    return git.stashApply(path, index, drop)
+  })
+
+  ipcMain.handle('git:stashDrop', async (_, { path, index }: { path: string; index: number }) => {
+    return git.stashDrop(path, index)
+  })
+
+  ipcMain.handle('git:stashShow', async (_, { path, index }: { path: string; index: number }) => {
+    return git.stashShow(path, index)
+  })
+
   ipcMain.handle('git:listTags', async (_, { path }: { path: string }) => {
     return git.listTags(path)
   })
