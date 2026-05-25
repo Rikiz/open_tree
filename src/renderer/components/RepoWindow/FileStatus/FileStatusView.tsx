@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useRepoStore } from '@renderer/store/repoStore'
 import { FileItem } from './FileItem'
 import { CommitPanel } from './CommitPanel'
-import { Plus, Minus, RotateCcw } from 'lucide-react'
+import { Plus, Minus, RotateCcw, X } from 'lucide-react'
 
 export function FileStatusView() {
   const status = useRepoStore(s => s.status)
@@ -107,8 +107,11 @@ export function FileStatusView() {
       {selectedFile && (
         <div className="w-1/2 overflow-auto">
           <div className="p-3">
-            <div className="text-xs font-mono text-muted-foreground mb-2 p-1 bg-accent rounded sticky top-0">
-              {selectedFile}
+            <div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-2 p-1 bg-accent rounded sticky top-0">
+              <span>{selectedFile}</span>
+              <button onClick={() => selectFile(null)} className="p-0.5 hover:bg-background rounded shrink-0">
+                <X className="w-3 h-3" />
+              </button>
             </div>
             {selectedFileDiff ? (
               selectedFileDiff.files.map((fileDiff, i) => (

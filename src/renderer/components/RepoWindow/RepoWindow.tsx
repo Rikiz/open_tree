@@ -28,12 +28,18 @@ export function RepoWindow({ onBack }: Props) {
 
   if (!repoPath) return null
 
+  const repoName = repoPath.replace(/\\/g, '/').split('/').filter(Boolean).pop() || ''
+
   return (
     <div className="h-screen flex flex-col bg-background">
       <header className="h-10 border-b flex items-center px-2 gap-1 shrink-0" style={{ WebkitAppRegion: 'drag', ...(/Mac/i.test(navigator.platform) ? { paddingLeft: '76px' } : {}) } as React.CSSProperties}>
         <button onClick={onBack} className="p-1.5 rounded hover:bg-accent" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
           <ArrowLeft className="w-4 h-4" />
         </button>
+        <div className="flex flex-col leading-tight min-w-0" title={repoPath}>
+          <span className="text-xs font-medium truncate">{repoName}</span>
+        </div>
+
         <div className="w-px h-4 bg-border mx-1" />
 
         <button onClick={() => setActiveTab('status')} className={`px-2.5 py-1 text-xs rounded hover:bg-accent ${activeTab === 'status' ? 'bg-accent' : ''}`} style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
