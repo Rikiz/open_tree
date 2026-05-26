@@ -1,10 +1,11 @@
-import { ArrowLeft, GitBranch, Upload, Download, Sun, Moon } from 'lucide-react'
+import { ArrowLeft, GitBranch, Upload, Download, Sun, Moon, Loader2 } from 'lucide-react'
 import { useRepoStore } from '@renderer/store/repoStore'
 import { useThemeStore } from '@renderer/store/themeStore'
 import { FileStatusView } from './FileStatus/FileStatusView'
 import { HistoryView } from './History/HistoryView'
 import { Sidebar } from '../Sidebar/Sidebar'
-import { useEffect, useState } from 'react'
+import { OperationToast } from '../common/OperationToast'
+import { useEffect, useState, useRef } from 'react'
 
 interface Props {
   onBack: () => void
@@ -14,17 +15,44 @@ export function RepoWindow({ onBack }: Props) {
   const repoPath = useRepoStore(s => s.repoPath)
   const status = useRepoStore(s => s.status)
   const currentBranch = useRepoStore(s => s.currentBranch)
+  const error = useRepoStore(s => s.error)
+  const isPulling = useRepoStore(s => s.isPulling)
+  const isPushing = useRepoStore(s => s.isPushing)
   const refreshStatus = useRepoStore(s => s.refreshStatus)
   const push = useRepoStore(s => s.push)
   const pull = useRepoStore(s => s.pull)
   const { resolved, toggle } = useThemeStore()
   const [activeTab, setActiveTab] = useState<'status' | 'history'>('status')
 
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const prevIsPulling = useRef(false)
+  const prevIsPushing = useRef(false)
+
   useEffect(() => {
     if (!repoPath) return
     const timer = setInterval(refreshStatus, 5000)
     return () => clearInterval(timer)
   }, [repoPath])
+
+  useEffect(() => {
+    if (prevIsPulling.current && !isPulling && !error) {
+      setNotification({ type: 'success', message: 'Pull completed successfully' })
+    }
+    prevIsPulling.current = isPulling
+  }, [isPulling, error])
+
+  useEffect(() => {
+    if (prevIsPushing.current && !isPushing && !error) {
+      setNotification({ type: 'success', message: 'Push completed successfully' })
+    }
+    prevIsPushing.current = isPushing
+  }, [isPushing, error])
+
+  useEffect(() => {
+    if (error && !isPulling && !isPushing) {
+      setNotification({ type: 'error', message: error })
+    }
+  }, [error, isPulling, isPushing])
 
   if (!repoPath) return null
 
@@ -51,11 +79,23 @@ export function RepoWindow({ onBack }: Props) {
 
         <div className="w-px h-4 bg-border mx-1" />
 
-        <button onClick={pull} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded hover:bg-accent" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-          <Download className="w-3.5 h-3.5" /> Pull
+        <button
+          onClick={pull}
+          disabled={isPulling}
+          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded hover:bg-accent disabled:opacity-50"
+          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        >
+          {isPulling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+          Pull
         </button>
-        <button onClick={push} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded hover:bg-accent" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-          <Upload className="w-3.5 h-3.5" /> Push
+        <button
+          onClick={push}
+          disabled={isPushing}
+          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded hover:bg-accent disabled:opacity-50"
+          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        >
+          {isPushing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+          Push
         </button>
 
         <div className="flex-1" />
@@ -79,6 +119,18 @@ export function RepoWindow({ onBack }: Props) {
           )}
         </div>
       </header>
+
+      {notification && (
+        <div className="px-2 pt-2 shrink-0 flex justify-center">
+          <div className="w-full max-w-lg">
+            <OperationToast
+              type={notification.type}
+              message={notification.message}
+              onDismiss={() => setNotification(null)}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 flex min-h-0">
         <Sidebar />

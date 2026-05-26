@@ -91,6 +91,8 @@ interface RepoState {
   selectedFileDiff: DiffResult | null
   isLoading: boolean
   error: string | null
+  isPulling: boolean
+  isPushing: boolean
   commitMessage: string
 
   setCommitMessage: (msg: string) => void
@@ -122,6 +124,8 @@ export const useRepoStore = create<RepoState>((set, get) => ({
   selectedFileDiff: null,
   isLoading: false,
   error: null,
+  isPulling: false,
+  isPushing: false,
   commitMessage: '',
 
   setCommitMessage: (msg) => set({ commitMessage: msg }),
@@ -151,6 +155,8 @@ export const useRepoStore = create<RepoState>((set, get) => ({
     selectedFile: null,
     selectedFileDiff: null,
     error: null,
+    isPulling: false,
+    isPushing: false,
     commitMessage: '',
   }),
 
@@ -274,17 +280,21 @@ export const useRepoStore = create<RepoState>((set, get) => ({
   push: async () => {
     const { repoPath, refreshStatus } = get()
     if (!repoPath) return
+    set({ error: null, isPushing: true })
     try {
       await git.push(repoPath)
       await refreshStatus()
     } catch (err: any) {
       set({ error: err.message })
+    } finally {
+      set({ isPushing: false })
     }
   },
 
   pull: async () => {
     const { repoPath, refreshStatus, fetchCommits, fetchBranches } = get()
     if (!repoPath) return
+    set({ error: null, isPulling: true })
     try {
       await git.pull(repoPath)
       await Promise.all([refreshStatus(), fetchBranches()])
@@ -292,6 +302,8 @@ export const useRepoStore = create<RepoState>((set, get) => ({
       await fetchCommits(50)
     } catch (err: any) {
       set({ error: err.message })
+    } finally {
+      set({ isPulling: false })
     }
   },
 
