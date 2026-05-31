@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FolderOpen, Plus, Trash2, Download, Settings } from 'lucide-react'
+import { FolderOpen, Plus, Trash2, Download, Settings, Search, X, GitBranch } from 'lucide-react'
 import type { Bookmark } from '@shared/types'
 import { dialog } from '@renderer/ipc'
 import { ThemeToggle } from '../common/ThemeToggle'
@@ -11,16 +11,30 @@ interface Props {
   onOpenRepo: (path: string) => void
   onAddRepo: (path: string) => void
   onRemoveRepo: (id: string) => void
+  onInitRepo?: (path: string) => void
 }
 
-export function BookmarkWindow({ bookmarks, onOpenRepo, onAddRepo, onRemoveRepo }: Props) {
+export function BookmarkWindow({ bookmarks, onOpenRepo, onAddRepo, onRemoveRepo, onInitRepo }: Props) {
   const [showClone, setShowClone] = useState(false)
   const [showPreferences, setShowPreferences] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   async function handleAdd() {
     const dir = await dialog.openDirectory()
     if (dir) onAddRepo(dir)
   }
+
+  async function handleInit() {
+    const dir = await dialog.openDirectory()
+    if (dir && onInitRepo) onInitRepo(dir)
+  }
+
+  const filtered = searchQuery
+    ? bookmarks.filter(b =>
+        b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.path.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : bookmarks
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -33,6 +47,13 @@ export function BookmarkWindow({ bookmarks, onOpenRepo, onAddRepo, onRemoveRepo 
             className="inline-flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-md hover:bg-accent transition-colors"
           >
             <Settings className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={handleInit}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border hover:bg-accent transition-colors"
+          >
+            <GitBranch className="w-3 h-3" />
+            Init
           </button>
           <button
             onClick={() => setShowClone(true)}
@@ -52,11 +73,36 @@ export function BookmarkWindow({ bookmarks, onOpenRepo, onAddRepo, onRemoveRepo 
       </header>
 
       <div className="flex-1 overflow-auto p-4">
+        {/* Search bar */}
+        {bookmarks.length > 3 && (
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search repositories..."
+              className="w-full h-8 text-sm rounded-md border bg-background pl-9 pr-8 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-accent"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+
         {bookmarks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
             <FolderOpen className="w-12 h-12 mb-3 opacity-30" />
             <p className="text-sm">No repositories yet</p>
             <div className="flex gap-2 mt-3">
+              <button onClick={handleInit} className="px-4 py-1.5 text-xs rounded-md border hover:bg-accent">
+                Init Repository
+              </button>
               <button onClick={() => setShowClone(true)} className="px-4 py-1.5 text-xs rounded-md border hover:bg-accent">
                 Clone Repository
               </button>
@@ -67,7 +113,7 @@ export function BookmarkWindow({ bookmarks, onOpenRepo, onAddRepo, onRemoveRepo 
           </div>
         ) : (
           <div className="grid gap-1">
-            {bookmarks.map((b) => (
+            {filtered.map((b) => (
               <div
                 key={b.id}
                 className="flex items-center justify-between px-3 py-2.5 rounded-md hover:bg-accent cursor-pointer group"
@@ -88,6 +134,11 @@ export function BookmarkWindow({ bookmarks, onOpenRepo, onAddRepo, onRemoveRepo 
                 </button>
               </div>
             ))}
+            {filtered.length === 0 && searchQuery && (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                No repositories matching "{searchQuery}"
+              </div>
+            )}
           </div>
         )}
       </div>

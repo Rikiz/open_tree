@@ -7,6 +7,8 @@ export function CommitPanel() {
   const commit = useRepoStore(s => s.commit)
   const status = useRepoStore(s => s.status)
   const [isCommitting, setIsCommitting] = useState(false)
+  const [amend, setAmend] = useState(false)
+  const [signoff, setSignoff] = useState(false)
 
   const stagedCount = status?.staged ?? 0
 
@@ -14,7 +16,9 @@ export function CommitPanel() {
     if (!commitMessage.trim()) return
     setIsCommitting(true)
     try {
-      await commit(commitMessage)
+      await commit(commitMessage, { amend, signoff })
+      setAmend(false)
+      setSignoff(false)
     } finally {
       setIsCommitting(false)
     }
@@ -35,12 +39,32 @@ export function CommitPanel() {
         }}
       />
       <div className="flex items-center justify-between mt-2">
-        <span className="text-xs text-muted-foreground">
-          {stagedCount > 0 ? `${stagedCount} file${stagedCount > 1 ? 's' : ''} staged` : 'Nothing staged'}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-muted-foreground">
+            {stagedCount > 0 ? `${stagedCount} file${stagedCount > 1 ? 's' : ''} staged` : 'Nothing staged'}
+          </span>
+          <label className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={amend}
+              onChange={(e) => setAmend(e.target.checked)}
+              className="rounded"
+            />
+            Amend
+          </label>
+          <label className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={signoff}
+              onChange={(e) => setSignoff(e.target.checked)}
+              className="rounded"
+            />
+            Sign-off
+          </label>
+        </div>
         <button
           onClick={handleCommit}
-          disabled={!commitMessage.trim() || stagedCount === 0 || isCommitting}
+          disabled={!commitMessage.trim() || (stagedCount === 0 && !amend) || isCommitting}
           className="inline-flex items-center gap-1 px-4 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
         >
           {isCommitting ? 'Committing...' : 'Commit'}

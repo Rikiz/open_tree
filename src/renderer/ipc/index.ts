@@ -44,12 +44,17 @@ export const git = {
   commitDetail: (path: string, hash: string) =>
     api.invoke(IPC.GIT_COMMIT_DETAIL, { path, hash }),
   listBranches: (path: string) => api.invoke(IPC.GIT_LIST_BRANCHES, { path }),
+  listRemoteBranches: (path: string) => api.invoke(IPC.GIT_LIST_REMOTE_BRANCHES, { path }),
   createBranch: (path: string, name: string, options?: Record<string, unknown>) =>
     api.invoke(IPC.GIT_CREATE_BRANCH, { path, name, options }),
   deleteBranch: (path: string, name: string, force?: boolean) =>
     api.invoke(IPC.GIT_DELETE_BRANCH, { path, name, force }),
   checkout: (path: string, ref: string, options?: Record<string, unknown>) =>
     api.invoke(IPC.GIT_CHECKOUT, { path, ref, options }),
+  checkoutFile: (path: string, file: string) =>
+    api.invoke(IPC.GIT_CHECKOUT_FILE, { path, file }),
+  cleanFile: (path: string, file: string) =>
+    api.invoke(IPC.GIT_CLEAN_FILE, { path, file }),
   push: (path: string, options?: Record<string, unknown>) =>
     api.invoke(IPC.GIT_PUSH, { path, options }),
   pull: (path: string, options?: Record<string, unknown>) =>

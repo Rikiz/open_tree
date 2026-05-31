@@ -1,8 +1,6 @@
 # AI_CONTEXT.md
 
-> **This file is for AI agents (Claude, ChatGPT, Cursor, Copilot, etc.) to quickly
-> understand the project context before working on features or fixes.**
->
+> **This file is for AI agents to quickly understand the project context before working on features or fixes.**
 > For detailed specs, see `SPEC.md`, `ARCH.md`, and `docs/*.md`.
 
 ---
@@ -73,11 +71,12 @@ Crypto:     Electron safeStorage (keychain-backed encryption)
 
 | If you need to... | Open |
 |-------------------|------|
-| Add a new Git operation | `src/main/services/GitService.ts` then `src/main/ipc/index.ts` |
-| Add IPC channel | `src/shared/constants/ipcChannels.ts` then `src/main/ipc/index.ts` then `src/renderer/ipc/index.ts` |
+| Add a new Git operation | `src/main/services/GitService.ts` → `src/main/ipc/index.ts` |
+| Add IPC channel | `src/shared/constants/ipcChannels.ts` → `src/main/ipc/index.ts` → `src/renderer/ipc/index.ts` |
 | Change the UI | `src/renderer/components/*` |
 | Add state | `src/renderer/store/repoStore.ts` |
 | Add a dialog | `src/renderer/components/Dialogs/` (copy existing as template) |
+| Add a hook | `src/renderer/hooks/` |
 | Change theming | `src/renderer/globals.css` → CSS variables |
 | Change window behavior | `src/main/windows/WindowManager.ts` |
 | Change auth flow | `src/main/services/AuthService.ts` |
@@ -95,7 +94,7 @@ npm run dev            # Start dev mode (Vite HMR + Electron window)
 npm run build          # Build main + renderer
 npm test               # Run all 53 tests
 npx vitest run tests/unit/GitService.test.ts   # Run specific suite
-npm run typecheck      # TypeScript type checking
+npm run typecheck      # TypeScript type checking (known pre-existing SSHService warnings)
 npm run package:mac    # Build + create macOS .dmg
 npm run package:win    # Build + create Windows .exe
 ```
@@ -108,10 +107,10 @@ Example: User clicks "Commit"
 
 ```
 Renderer (CommitPanel.tsx)
-  → useRepoStore.commit(message)
-  → ipc.invoke('git:commit', { path, message })
+  → useRepoStore.commit(message, { amend, signoff })
+  → ipc.invoke('git:commit', { path, message, options })
   → Main Process (ipc/index.ts)
-  → GitService.commit(path, message)
+  → GitService.commit(path, message, options)
   → execFile('git', ['-C', path, 'commit', '-m', message])
   ← { hash, branch }
   → repoStore.refreshStatus()
@@ -128,30 +127,60 @@ Renderer (CommitPanel.tsx)
 |-------|--------|
 | Core Git operations (clone/commit/push/pull/branch) | ✅ Done |
 | File status + stage/unstage + diff viewer | ✅ Done |
-| History + branch graph (Canvas) | ✅ Done |
+| History + branch graph (Canvas) + search/filter | ✅ Done |
 | Merge/Rebase/Cherry-pick | ✅ Done |
 | OAuth (GitHub/GitLab/Bitbucket) | ✅ Done |
 | SSH key management | ✅ Done |
 | Dark/Light theme | ✅ Done |
 | Packaging (macOS DMG + Windows EXE) | ✅ Done |
 | Testing (53 tests) | ✅ Done |
+| UX improvements (see §8) | ✅ Done |
 | i18n | ⬜ Not started |
 
 See `docs/implementation.md` for detailed task breakdown.
 
 ---
 
-## 8. Quick Reference
+## 8. UX Improvements (v2, 2026-05-31)
+
+Added in a single pass. All cross-platform (macOS + Windows).
+
+| Category | Feature | Key files |
+|----------|---------|-----------|
+| **Bug fix** | Untracked files can now be staged (was blocked) | `FileStatusView.tsx` |
+| **Commit** | Amend / Sign-off checkboxes | `CommitPanel.tsx` |
+| **Toolbar** | Fetch, Stash buttons | `RepoWindow.tsx` |
+| **Push/Pull** | Options dialog (force-with-lease, set-upstream, rebase/ff-only) | `PushPullOptionsDialog.tsx` |
+| **History** | Search bar with filter by message/author/file (debounced) | `HistoryView.tsx`, `repoStore.ts` (logFilter state) |
+| **Files** | Discard changes (right-click + hover) with confirmation dialog | `FileItem.tsx`, `FileStatusView.tsx`, `GitService.checkoutFile/cleanFile` |
+| **Sidebar** | Branch context menu (checkout/push/delete with confirmation) | `Sidebar.tsx` |
+| **Sidebar** | Tag create dialog + right-click checkout | `TagDialog.tsx`, `Sidebar.tsx` |
+| **Sidebar** | Remote branches listed under local branches | `GitService.listRemoteBranches`, `Sidebar.tsx` |
+| **Sidebar** | Stash create (toolbar button) | `RepoWindow.tsx` |
+| **Detail** | Commit detail shows expandable diff per file | `CommitDetail.tsx` |
+| **Keys** | Keyboard shortcuts: Cmd/Ctrl+R refresh, +Shift+S stage, +Shift+A unstage | `useKeyboardShortcuts.ts` |
+| **Clone** | Progress bar (stage + percentage) | `CloneDialog.tsx` |
+| **Bookmark** | Search bar (shown when >3 repos), Init repo button | `BookmarkWindow.tsx`, `App.tsx` |
+
+New GitService methods: `checkoutFile()`, `cleanFile()`, `listRemoteBranches()`.
+New IPC channels: `git:checkoutFile`, `git:cleanFile`, `git:listRemoteBranches`.
+New store state: `logFilter: { search, filterBy }`.
+
+---
+
+## 9. Quick Reference
 
 | Concept | Convention |
-|---------|-----------|
+|---------|------------|
 | IPC channel names | `category:action` (e.g. `git:commit`, `auth:login`) |
 | Component files | PascalCase.tsx, one component per file |
 | Service files | PascalCase.ts (e.g. `GitService.ts`) |
 | Store files | `*Store.ts` (e.g. `repoStore.ts`) |
+| Hook files | `use*.ts` (e.g. `useKeyboardShortcuts.ts`) |
 | Imports: renderer | `@renderer/*` alias |
 | Imports: main | `@main/*` alias |
 | Imports: shared | `@shared/*` alias |
 | Git parsing separators | `\x00` (NUL byte) for fields, `\n` for records |
 | Theming | CSS variables in `:root` and `.dark` |
 | Dark mode toggle | `document.documentElement.classList.toggle('dark')` |
+| Platform detection | `/Mac/i.test(navigator.platform)` for macOS-specific UI |

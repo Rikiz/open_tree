@@ -79,6 +79,11 @@ interface CommitDetailResult {
   diff: string
 }
 
+export interface LogFilter {
+  search: string
+  filterBy: 'all' | 'message' | 'author' | 'file'
+}
+
 interface RepoState {
   repoPath: string | null
   status: StatusResult | null
@@ -94,14 +99,16 @@ interface RepoState {
   isPulling: boolean
   isPushing: boolean
   commitMessage: string
+  logFilter: LogFilter
 
   setCommitMessage: (msg: string) => void
+  setLogFilter: (filter: LogFilter) => void
   openRepo: (path: string) => Promise<void>
   closeRepo: () => void
   refreshStatus: () => Promise<void>
   fetchBranches: () => Promise<void>
   fetchCommits: (limit?: number) => Promise<void>
-  commit: (message: string) => Promise<void>
+  commit: (message: string, options?: { amend?: boolean; signoff?: boolean }) => Promise<void>
   stageFiles: (files: string[]) => Promise<void>
   unstageFiles: (files: string[]) => Promise<void>
   selectFile: (file: string | null) => Promise<void>
@@ -127,8 +134,13 @@ export const useRepoStore = create<RepoState>((set, get) => ({
   isPulling: false,
   isPushing: false,
   commitMessage: '',
+  logFilter: { search: '', filterBy: 'all' },
 
   setCommitMessage: (msg) => set({ commitMessage: msg }),
+  setLogFilter: (filter) => {
+    set({ logFilter: filter, commits: [], hasMoreCommits: true })
+    get().fetchCommits(50)
+  },
 
   openRepo: async (repoPath) => {
     set({ isLoading: true, error: null, repoPath })
@@ -158,6 +170,7 @@ export const useRepoStore = create<RepoState>((set, get) => ({
     isPulling: false,
     isPushing: false,
     commitMessage: '',
+    logFilter: { search: '', filterBy: 'all' },
   }),
 
   refreshStatus: async () => {
@@ -183,11 +196,23 @@ export const useRepoStore = create<RepoState>((set, get) => ({
   },
 
   fetchCommits: async (limit = 50) => {
-    const { repoPath, commits, isLoading } = get()
+    const { repoPath, commits, isLoading, logFilter } = get()
     if (!repoPath || isLoading) return
     set({ isLoading: true })
     try {
-      const newCommits = await git.log(repoPath, { maxCount: limit, skip: commits.length }) as Commit[]
+      const options: Record<string, unknown> = { maxCount: limit, skip: commits.length }
+      if (logFilter.search) {
+        if (logFilter.filterBy === 'message' || logFilter.filterBy === 'all') {
+          options.grep = logFilter.search
+        }
+        if (logFilter.filterBy === 'author') {
+          options.author = logFilter.search
+        }
+        if (logFilter.filterBy === 'file') {
+          options.file = logFilter.search
+        }
+      }
+      const newCommits = await git.log(repoPath, options) as Commit[]
       set({ commits: [...commits, ...newCommits], hasMoreCommits: newCommits.length === limit, isLoading: false })
     } catch (err: any) {
       set({ error: err.message, isLoading: false })
@@ -209,11 +234,11 @@ export const useRepoStore = create<RepoState>((set, get) => ({
     }
   },
 
-  commit: async (message) => {
+  commit: async (message, options = {}) => {
     const { repoPath, refreshStatus } = get()
     if (!repoPath) return
     try {
-      await git.commit(repoPath, message)
+      await git.commit(repoPath, message, options)
       set({ commitMessage: '' })
       await refreshStatus()
       set({ commits: [], selectedFile: null, selectedFileDiff: null, selectedCommit: null })
@@ -308,11 +333,20 @@ export const useRepoStore = create<RepoState>((set, get) => ({
   },
 
   discardFile: async (file) => {
-    const { repoPath, refreshStatus } = get()
+    const { repoPath, refreshStatus, status } = get()
     if (!repoPath) return
     try {
-      await git.checkout(repoPath, '--')
-      await git.status(repoPath) // fallback for file-level checkout
+      const fileEntry = status?.files.find(f => f.path === file)
+      if (fileEntry?.status === '?') {
+        // Untracked: remove the file
+        await git.cleanFile(repoPath, file)
+      } else {
+        // Tracked: restore from HEAD
+        await git.checkoutFile(repoPath, file)
+      }
+      if (get().selectedFile === file) {
+        set({ selectedFile: null, selectedFileDiff: null })
+      }
       await refreshStatus()
     } catch (err: any) {
       set({ error: err.message })

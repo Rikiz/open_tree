@@ -109,6 +109,10 @@ export function registerIpcHandlers(wm: WindowManager): void {
     return git.listBranches(path)
   })
 
+  ipcMain.handle('git:listRemoteBranches', async (_, { path }: { path: string }) => {
+    return git.listRemoteBranches(path)
+  })
+
   ipcMain.handle('git:createBranch', async (_, { path, name, options }: { path: string; name: string; options?: Record<string, unknown> }) => {
     return git.createBranch(path, name, options ?? {})
   })
@@ -119,6 +123,14 @@ export function registerIpcHandlers(wm: WindowManager): void {
 
   ipcMain.handle('git:checkout', async (_, { path, ref, options }: { path: string; ref: string; options?: Record<string, unknown> }) => {
     return git.checkout(path, ref, options ?? {})
+  })
+
+  ipcMain.handle('git:checkoutFile', async (_, { path, file }: { path: string; file: string }) => {
+    return git.checkoutFile(path, file)
+  })
+
+  ipcMain.handle('git:cleanFile', async (_, { path, file }: { path: string; file: string }) => {
+    return git.cleanFile(path, file)
   })
 
   ipcMain.handle('git:push', async (event, { path, options }: { path: string; options?: Record<string, unknown> }) => {

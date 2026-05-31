@@ -1,4 +1,5 @@
-import { X, GitCommit, User, Clock, GitBranch } from 'lucide-react'
+import { X, GitCommit, User, Clock, GitBranch, ChevronRight, ChevronDown } from 'lucide-react'
+import { useState } from 'react'
 
 interface CommitDetailProps {
   detail: {
@@ -19,6 +20,8 @@ interface CommitDetailProps {
 
 export function CommitDetail({ detail, onClose }: CommitDetailProps) {
   const { commit, diff } = detail
+  const [expandedFile, setExpandedFile] = useState<string | null>(null)
+
   const sections = diff.split(/^diff --git /m).filter(Boolean)
   const files = sections.map(s => {
     const header = s.split('\n')[0]
@@ -27,7 +30,8 @@ export function CommitDetail({ detail, onClose }: CommitDetailProps) {
     const additions = lines.filter(l => l.startsWith('+') && !l.startsWith('+++')).length
     const deletions = lines.filter(l => l.startsWith('-') && !l.startsWith('---')).length
     const binary = s.includes('Binary files')
-    return { path, additions, deletions, binary }
+    const hunks = parseHunks(s)
+    return { path, additions, deletions, binary, hunks, raw: s }
   })
 
   const totalAdd = files.reduce((sum, f) => sum + f.additions, 0)
@@ -74,32 +78,97 @@ export function CommitDetail({ detail, onClose }: CommitDetailProps) {
         </button>
       </div>
 
-      <div className="max-h-64 overflow-auto">
+      <div className="max-h-96 overflow-auto">
         {files.length === 0 && (
           <div className="p-3 text-xs text-muted-foreground text-center">
             No diff content available
           </div>
         )}
-        <table className="w-full text-xs font-mono">
-          <tbody>
-            {files.map(f => (
-              <tr key={f.path} className="border-b last:border-0">
-                <td className="px-3 py-1.5">
-                  <span className={f.binary ? 'text-muted-foreground' : ''}>
-                    {f.path}
-                  </span>
-                </td>
-                <td className="px-2 py-1.5 text-right w-12">
-                  {f.additions > 0 && <span className="text-green-600">+{f.additions}</span>}
-                </td>
-                <td className="px-2 py-1.5 text-right w-12">
-                  {f.deletions > 0 && <span className="text-red-600">-{f.deletions}</span>}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {files.map(f => (
+          <div key={f.path}>
+            {/* File row - clickable to expand */}
+            <div
+              className="flex items-center border-b cursor-pointer hover:bg-accent/50"
+              onClick={() => setExpandedFile(expandedFile === f.path ? null : f.path)}
+            >
+              <div className="px-2 py-1.5">
+                {expandedFile === f.path ? (
+                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                )}
+              </div>
+              <span className={`text-xs font-mono flex-1 ${f.binary ? 'text-muted-foreground' : ''}`}>
+                {f.path}
+              </span>
+              <div className="px-3 py-1.5 text-right shrink-0 flex items-center gap-2">
+                {f.additions > 0 && <span className="text-green-600 text-xs">+{f.additions}</span>}
+                {f.deletions > 0 && <span className="text-red-600 text-xs">-{f.deletions}</span>}
+              </div>
+            </div>
+
+            {/* Expanded diff */}
+            {expandedFile === f.path && !f.binary && (
+              <div className="border-b bg-muted/20">
+                {f.hunks.map((hunk, i) => (
+                  <div key={i} className="mb-1">
+                    <div className="text-xs font-mono text-blue-500 bg-blue-50 dark:bg-blue-950 py-0.5 px-2">
+                      {hunk.header}
+                    </div>
+                    <div className="font-mono text-xs leading-5">
+                      {hunk.lines.map((line, j) => (
+                        <div
+                          key={j}
+                          className={`px-2 py-0 whitespace-pre ${
+                            line.type === 'add' ? 'diff-add' : line.type === 'delete' ? 'diff-del' : ''
+                          }`}
+                        >
+                          <span className="text-muted-foreground mr-2 w-6 inline-block text-right select-none">
+                            {line.type === 'add' ? '+' : line.type === 'delete' ? '-' : ' '}
+                          </span>
+                          {line.content}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   )
+}
+
+interface ParsedHunk {
+  header: string
+  lines: { type: 'add' | 'delete' | 'context'; content: string }[]
+}
+
+function parseHunks(raw: string): ParsedHunk[] {
+  const hunks: ParsedHunk[] = []
+  const hunkMatches = raw.match(/@@ -\d+,?\d* \+\d+,?\d* @@.*/g)
+  if (!hunkMatches) return hunks
+
+  const parts = raw.split(/^@@ .* @@.*/m)
+  for (let i = 0; i < hunkMatches.length; i++) {
+    const header = hunkMatches[i]
+    const body = parts[i + 1] || ''
+    const lines: ParsedHunk['lines'] = []
+
+    for (const hunkLine of body.split('\n')) {
+      if (hunkLine.startsWith('+')) {
+        lines.push({ type: 'add', content: hunkLine.slice(1) })
+      } else if (hunkLine.startsWith('-')) {
+        lines.push({ type: 'delete', content: hunkLine.slice(1) })
+      } else if (hunkLine.startsWith(' ')) {
+        lines.push({ type: 'context', content: hunkLine.slice(1) })
+      }
+    }
+
+    hunks.push({ header, lines })
+  }
+
+  return hunks
 }

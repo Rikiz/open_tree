@@ -761,6 +761,33 @@ export class GitService {
     await this.exec(repoPath, args)
   }
 
+
+  async checkoutFile(repoPath: string, file: string): Promise<void> {
+    await this.exec(repoPath, ['checkout', '--', file])
+  }
+
+  async cleanFile(repoPath: string, file: string): Promise<void> {
+    await this.exec(repoPath, ['clean', '-f', '--', file])
+  }
+
+  async listRemoteBranches(repoPath: string): Promise<Branch[]> {
+    const { stdout } = await this.exec(repoPath, [
+      'for-each-ref',
+      '--format=%(refname:short)%00%(objectname:short)',
+      'refs/remotes/',
+    ])
+
+    const branches: Branch[] = []
+    const lines = stdout.split('\n').filter(Boolean)
+
+    for (const line of lines) {
+      const [name, hash] = line.split('\0')
+      branches.push({ name, headCommit: { hash }, isCurrent: false, isRemote: true, ahead: 0, behind: 0 })
+    }
+
+    return branches
+  }
+
   dispose(): void {
     for (const [_id, proc] of this.activeProcesses) {
       proc.kill()

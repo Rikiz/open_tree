@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { repo } from '@renderer/ipc'
+import { repo, git } from '@renderer/ipc'
 import { BookmarkWindow } from './BookmarkWindow/BookmarkWindow'
 import { RepoWindow } from './RepoWindow/RepoWindow'
 import { useRepoStore } from '@renderer/store/repoStore'
@@ -48,6 +48,16 @@ export function App() {
     await loadBookmarks()
   }
 
+  async function handleInitRepo(dirPath: string) {
+    try {
+      await git.init(dirPath)
+      await repo.add(dirPath)
+      await loadBookmarks()
+    } catch (err: any) {
+      console.error('Failed to init repo:', err)
+    }
+  }
+
   function handleBackToBookmarks() {
     setCurrentView('bookmarks')
     closeRepo()
@@ -64,6 +74,7 @@ export function App() {
       onOpenRepo={handleOpenRepo}
       onAddRepo={handleAddRepo}
       onRemoveRepo={handleRemoveRepo}
+      onInitRepo={handleInitRepo}
     />
   )
 }

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useRepoStore } from '@renderer/store/repoStore'
 import { FileItem } from './FileItem'
 import { CommitPanel } from './CommitPanel'
-import { Plus, Minus, RotateCcw, X } from 'lucide-react'
+import { Plus, Minus, RotateCcw, X, AlertTriangle } from 'lucide-react'
 
 export function FileStatusView() {
   const status = useRepoStore(s => s.status)
@@ -11,9 +11,11 @@ export function FileStatusView() {
   const selectFile = useRepoStore(s => s.selectFile)
   const stageFiles = useRepoStore(s => s.stageFiles)
   const unstageFiles = useRepoStore(s => s.unstageFiles)
+  const discardFile = useRepoStore(s => s.discardFile)
 
   const [showStaged, setShowStaged] = useState(true)
   const [showUnstaged, setShowUnstaged] = useState(true)
+  const [confirmDiscard, setConfirmDiscard] = useState<string | null>(null)
 
   if (!status) {
     return (
@@ -25,6 +27,16 @@ export function FileStatusView() {
 
   const unstagedFiles = status.files.filter(f => !f.staged)
   const stagedFiles = status.files.filter(f => f.staged)
+
+  function handleDiscard(file: string) {
+    setConfirmDiscard(file)
+  }
+
+  async function confirmDiscardAction() {
+    if (!confirmDiscard) return
+    await discardFile(confirmDiscard)
+    setConfirmDiscard(null)
+  }
 
   return (
     <div className="flex h-full min-h-0">
@@ -73,7 +85,7 @@ export function FileStatusView() {
                 </span>
                 Unstaged Files ({unstagedFiles.length})
                 <button
-                  onClick={(e) => { e.stopPropagation(); stageFiles(unstagedFiles.filter(f => f.status !== '?').map(f => f.path)) }}
+                  onClick={(e) => { e.stopPropagation(); stageFiles(unstagedFiles.map(f => f.path)) }}
                   className="ml-auto text-[10px] px-1.5 py-0.5 rounded border hover:bg-accent"
                 >
                   Stage all
@@ -85,9 +97,10 @@ export function FileStatusView() {
                   file={f}
                   onClick={() => selectFile(f.path)}
                   isSelected={selectedFile === f.path}
-                  onAction={f.status === '?' ? undefined : () => stageFiles([f.path])}
+                  onAction={() => stageFiles([f.path])}
                   actionLabel="Stage"
                   actionIcon={<Plus className="w-3 h-3" />}
+                  onDiscard={() => handleDiscard(f.path)}
                 />
               ))}
             </div>
@@ -145,6 +158,35 @@ export function FileStatusView() {
                 Binary file or no changes to display
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Discard confirmation dialog */}
+      {confirmDiscard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+          <div className="bg-background rounded-lg shadow-xl border w-[380px]">
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle className="w-5 h-5 text-warning shrink-0" />
+                <h3 className="text-sm font-semibold">Discard Changes</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Are you sure you want to discard changes to <strong className="font-mono text-xs">{confirmDiscard}</strong>?
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2 px-4 py-3 border-t">
+              <button onClick={() => setConfirmDiscard(null)} className="px-4 py-1.5 text-sm rounded-md border hover:bg-accent">
+                Cancel
+              </button>
+              <button
+                onClick={confirmDiscardAction}
+                className="px-4 py-1.5 text-sm rounded-md bg-destructive text-destructive-foreground hover:opacity-90"
+              >
+                Discard
+              </button>
+            </div>
           </div>
         </div>
       )}

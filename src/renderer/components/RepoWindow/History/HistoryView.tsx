@@ -1,7 +1,9 @@
-import { useRepoStore } from '@renderer/store/repoStore'
+import { useRepoStore, type LogFilter } from '@renderer/store/repoStore'
 import { CommitGraphCanvas, useGraphLayout } from './CommitGraph'
 import { CommitDetail } from './CommitDetail'
 import { git } from '@renderer/ipc'
+import { Search, X } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
 
 export function HistoryView() {
   const commits = useRepoStore(s => s.commits)
@@ -10,6 +12,37 @@ export function HistoryView() {
   const fetchCommits = useRepoStore(s => s.fetchCommits)
   const selectCommit = useRepoStore(s => s.selectCommit)
   const selectedCommit = useRepoStore(s => s.selectedCommit)
+  const logFilter = useRepoStore(s => s.logFilter)
+  const logFilterBy = useRepoStore(s => s.logFilter.filterBy)
+  const setLogFilter = useRepoStore(s => s.setLogFilter)
+
+  const [searchText, setSearchText] = useState(logFilter.search)
+  const [showSearch, setShowSearch] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => {
+    if (showSearch && searchInputRef.current) {
+      searchInputRef.current.focus()
+    }
+  }, [showSearch])
+
+  function handleSearchChange(value: string) {
+    setSearchText(value)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      setLogFilter({ search: value, filterBy: logFilterBy })
+    }, 300)
+  }
+
+  function handleFilterByChange(filterBy: LogFilter['filterBy']) {
+    setLogFilter({ search: searchText, filterBy })
+  }
+
+  function clearSearch() {
+    setSearchText('')
+    setLogFilter({ search: '', filterBy: logFilterBy })
+  }
 
   const graphNodes = commits.map(c => ({
     hash: c.hash,
@@ -42,6 +75,49 @@ export function HistoryView() {
 
   return (
     <div className="h-full flex flex-col">
+      {/* Search bar */}
+      <div className="border-b px-2 py-1.5 flex items-center gap-1.5 shrink-0">
+        <button
+          onClick={() => setShowSearch(!showSearch)}
+          className={`p-1 rounded hover:bg-accent ${showSearch ? 'bg-accent' : ''}`}
+          title="Search history"
+        >
+          <Search className="w-3.5 h-3.5" />
+        </button>
+        {showSearch && (
+          <>
+            <div className="flex-1 flex items-center relative">
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchText}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder="Search commits..."
+                className="w-full h-6 text-xs rounded border bg-background px-2 pr-6 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') { clearSearch(); setShowSearch(false) }
+                }}
+              />
+              {searchText && (
+                <button onClick={clearSearch} className="absolute right-1 p-0.5 rounded hover:bg-accent">
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+            <select
+              value={logFilterBy}
+              onChange={(e) => handleFilterByChange(e.target.value as LogFilter['filterBy'])}
+              className="h-6 text-xs rounded border bg-background px-1 focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              <option value="all">All</option>
+              <option value="message">Message</option>
+              <option value="author">Author</option>
+              <option value="file">File</option>
+            </select>
+          </>
+        )}
+      </div>
+
       {selectedCommit && (
         <CommitDetail
           detail={selectedCommit}
@@ -62,6 +138,11 @@ export function HistoryView() {
 
           {/* Text layer */}
           <div style={{ marginLeft: graphWidth }}>
+            {commits.length === 0 && (
+              <div className="flex items-center justify-center h-20 text-xs text-muted-foreground">
+                {logFilter.search ? `No commits matching "${logFilter.search}"` : 'No commits'}
+              </div>
+            )}
             {commits.map((c, i) => (
               <div
                 key={c.hash}
